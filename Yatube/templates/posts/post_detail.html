@@ -1,7 +1,7 @@
 {% extends 'base.html' %} 
 {% block title %}
   {% autoescape on %}
-    Пост {{ group.title }}
+  Пост {{ post.text|truncatechars:30 }}
   {% endautoescape %}
 {% endblock %} 
     {%block content%}

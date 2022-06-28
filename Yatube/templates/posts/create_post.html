@@ -1,4 +1,5 @@
 {% extends 'base.html' %} 
+{% load user_filters %}
 {% block title %}
 {% if is_edit %}
 Редактировать запись
@@ -20,54 +21,49 @@
               </div>
               <div class="card-body">
                 {% if form.errors %}
-                  {% for field in form %}
-                    {% for error in field.errors %}
-                      <div class="alert alert-danger">
-                      <strong>{{ error|escape }}</strong>
-              </div>
-                    {% endfor %}
-                  {% endfor %}
-                  {% for error in form.non_field_errors %}
+                {% for field in form %}
+                  {% for error in field.errors %}            
                     <div class="alert alert-danger">
-                    <strong>{{ error|escape }}</strong>
-              </div>
+                      {{ error|escape }}
+                    </div>
                   {% endfor %}
-                {% endif %}      
-                <form method="post" action="{% url 'posts:post_create' %}">
-                  {% csrf_token %}           
-                  <div class="form-group row my-3 p-3">
-                    <label for="id_text">
-                      {{ form.text }}                 
-                      <span class="required text-danger" >*</span>                  
-                    </label>
-                    <textarea name="text" 
-                    cols="40" rows="10"
-                    class="form-control"
-                    required id="id_text">
-                    </textarea>                
-                    <small id="id_text-help" class="form-text text-muted">
-                      Текст нового поста
-                    </small>                  
-                  </div>            
-                  <div class="form-group row my-3 p-3">
-                    <label for="id_group">
-                      {{ form.group }}                
-                    </label>
-                    <select name="group" class="form-control" id="id_group">
-                      <option value="" selected>---------</option>
-                      <option value="1">Группа: Лев Толстой – зеркало русской революции</option>
-                    </select>
-                    <small id="id_group-help" class="form-text text-muted">
-                      Группа, к которой будет относиться пост
-                    </small>
+                {% endfor %}
+                {% for error in form.non_field_errors %}
+                  <div class="alert alert-danger">
+                    {{ error|escape }}
                   </div>
-                  <div class="d-flex justify-content-end">
-                    <button type="submit" class="btn btn-primary">
-                      {% if is_edit %}
-                        Сохранить
-                      {% else %}
-                        Добавить
-                      {% endif %}               
+                {% endfor %}
+              {% endif %}   
+              <form method="post" action=
+                {% if is_edit %} "{% url 'posts:post_edit' 55 %}" 
+                {% else %} "{% url 'posts:post_create' %}" 
+                {% endif %}> 
+                {% csrf_token %}
+                <div class="form-group row my-3 p-3">
+                  {% for field in form %}
+                    <div class="form-group row my-1 p-2">
+                      <label for="{{ field.id_for_label }}">
+                      {{ field.label }}
+                      {% if field.field.required %}
+                        <span class="required text-danger">*</span>
+                      {% endif %}
+                      </label>
+                      {{ field|addclass:'form-control'}}
+                      {% if field.help_text %}
+                        <small id="{{ field.id_for_label }}-help" class="form-text text-muted">
+                        {{ field.help_text|safe }}
+                        </small>
+                      {% endif %}
+                    </div>
+                  {% endfor %}
+                </div>
+                <div class="d-flex justify-content-end">
+                  <button type="submit" class="btn btn-primary">
+                    {% if is_edit %}
+                      Сохранить
+                    {% else %}
+                      Добавить
+                    {% endif %}               
                     </button>
                   </div>
                 </form>

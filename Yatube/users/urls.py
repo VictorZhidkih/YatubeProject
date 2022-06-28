@@ -14,10 +14,6 @@ app_name = 'users'
 
 urlpatterns = [
     path('signup/', views.SignUp.as_view(), name='signup'),
-    path('password_change/', 
-        views.PasswordChangeView.as_view,
-        name='password_change'
-    ),
     path(
         'logout/',
         LogoutView.as_view(template_name='users/logged_out.html'),
@@ -29,7 +25,7 @@ urlpatterns = [
         name='login'
     ),
     path(
-        'password_reset_form/',
+        'password_reset/',
         PasswordResetView.as_view(
             template_name='users/password_reset_form.html'
         ),
@@ -45,7 +41,7 @@ urlpatterns = [
     path(
         'password_change_done/',
         PasswordChangeDoneView.as_view(
-            template_name='users/password_change_done.html'
+            template_name='users/password_change_done.html',
         ),
         name='password_change_done'
     ),
