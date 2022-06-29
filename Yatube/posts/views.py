@@ -41,8 +41,8 @@ def profile(request, username):
     context = {
         'page_obj': page_obj,
         'posts_count': posts_count,
-        'author': author,}
-    return render( request, 'posts/profile.html', context)
+        'author': author, }
+    return render(request, 'posts/profile.html', context)
 
 
 @login_required
