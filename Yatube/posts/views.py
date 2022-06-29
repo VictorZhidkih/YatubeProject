@@ -39,11 +39,10 @@ def profile(request, username):
     page_obj = paginator.get_page(page_number)
 
     context = {
-            'page_obj': page_obj,
-            'posts_count': posts_count,
-            'author': author,
-    }
-    return render(request, 'posts/profile.html', context)
+        'page_obj': page_obj,
+        'posts_count': posts_count,
+        'author': author,}
+    return render( request, 'posts/profile.html', context)
 
 
 @login_required
@@ -60,7 +59,7 @@ def post_detail(request, post_id):
 @login_required
 def post_create(request):
     '''Страница для публикации постов'''
-    if request.method == 'POST':
+    if request.method == "POST":
         form = PostForm(request.POST)
         if form.is_valid():
             post = form.save(False)
