@@ -10,11 +10,8 @@ from .forms import PostForm
 
 def index(request):
     posts = Post.objects.all()
-    # Показывать по 10 записей на странице
     paginator = Paginator(posts, 10)
-    # Из URL извлекаем номер запрошенной страницы - это значение параметра page
     page_number = request.GET.get('page')
-    # Получаем набор записей для страницы с запрошенным номером
     page_obj = paginator.get_page(page_number)
     context = {
         'posts': posts,
@@ -34,9 +31,7 @@ def group_posts(request, slug):
 
 
 def profile(request, username):
-    # функция getobj получает по заданным критериям объект из базы данных
     author = get_object_or_404(User, username=username)
-    # отфильтровываем по авторы посты
     posts = author.posts.select_related('group', 'author')
     paginator = Paginator(posts, 10)
     posts_count = posts.count()
@@ -44,25 +39,21 @@ def profile(request, username):
     page_obj = paginator.get_page(page_number)
 
     context = {
-              'page_obj': page_obj,
-              'posts_count': posts_count,
-              'author': author,
+            'page_obj': page_obj,
+            'posts_count': posts_count,
+            'author': author,
     }
     return render(request, 'posts/profile.html', context)
 
 
 @login_required
 def post_detail(request, post_id):
-    # Страница для просмотра одного поста
-    # Здесь код запроса к модели и создание словаря контекста
-    # В пост выведен один пост, выбранный по pk
     post = get_object_or_404(Post, pk=post_id)
-    # Выведено общее количество постов пользователя
     posts_count = Post.objects.filter(author=post.author).count()
-    # В тег <title> выведен текст Пост < Первые 30 символов поста>
-    context = {'post': post,
-              'posts_count': posts_count,
-              }
+    context = {
+        'post': post,
+        'posts_count': posts_count,
+    }
     return render(request, 'posts/post_detail.html', context)
 
 
@@ -87,7 +78,7 @@ def post_edit(request, post_id):
     '''страницу редактирования записи'''
     post = get_object_or_404(Post, pk=post_id)
     if request.user != post.author:
-        return rederict ('posts:post_detail.html')
+        return rederict('posts:post_detail.html')
     else:
         if request.method == 'POST':
             form = PostForm(request.POST, instance=post)
@@ -99,5 +90,3 @@ def post_edit(request, post_id):
         form = PostForm(instance=post)
         return render(request, 'posts/create_post.html', {'form': form,
                                                           'is_edit': True})
-
-
