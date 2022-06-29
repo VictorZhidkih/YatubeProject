@@ -77,7 +77,7 @@ def post_edit(request, post_id):
     '''страницу редактирования записи'''
     post = get_object_or_404(Post, pk=post_id)
     if request.user != post.author:
-        return rederict('posts:post_detail.html')
+        return redirect('posts:post_detail.html')
     else:
         if request.method == 'POST':
             form = PostForm(request.POST, instance=post)
