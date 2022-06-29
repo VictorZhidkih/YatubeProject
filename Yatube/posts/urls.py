@@ -23,7 +23,7 @@ urlpatterns = [
         name='post_detail'
     ),
     path(
-        'post_create/',
+        'create/',
         views.post_create,
         name='post_create'
     ),
