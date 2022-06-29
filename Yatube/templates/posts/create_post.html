@@ -33,11 +33,8 @@
                     {{ error|escape }}
                   </div>
                 {% endfor %}
-              {% endif %}   
-              <form method="post" action=
-                {% if is_edit %} "{% url 'posts:post_edit' 55 %}" 
-                {% else %} "{% url 'posts:post_create' %}" 
-                {% endif %}> 
+                {% endif %}   
+                <form method="post" action="#"> 
                 {% csrf_token %}
                 <div class="form-group row my-3 p-3">
                   {% for field in form %}
