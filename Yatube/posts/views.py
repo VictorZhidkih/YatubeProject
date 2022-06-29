@@ -7,6 +7,7 @@ from .models import Group, Post, User
 
 from .forms import PostForm
 
+
 def index(request):
     posts = Post.objects.all()
     # Показывать по 10 записей на странице
@@ -33,7 +34,7 @@ def group_posts(request, slug):
 
 
 def profile(request, username):
-    # функция getobj получает по заданным критериям объект из базы данных 
+    # функция getobj получает по заданным критериям объект из базы данных
     author = get_object_or_404(User, username=username)
     # отфильтровываем по авторы посты
     posts = author.posts.select_related('group', 'author')
@@ -42,12 +43,13 @@ def profile(request, username):
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
-    context = { 
+    context = {
               'page_obj': page_obj,
               'posts_count': posts_count,
               'author': author,
     }
     return render(request, 'posts/profile.html', context)
+
 
 @login_required
 def post_detail(request, post_id):
@@ -58,10 +60,11 @@ def post_detail(request, post_id):
     # Выведено общее количество постов пользователя
     posts_count = Post.objects.filter(author=post.author).count()
     # В тег <title> выведен текст Пост < Первые 30 символов поста>
-    context = { 'post': post,
-                'posts_count': posts_count,
-    }
+    context = {'post': post,
+              'posts_count': posts_count,
+              }
     return render(request, 'posts/post_detail.html', context)
+
 
 @login_required
 def post_create(request):
@@ -72,12 +75,13 @@ def post_create(request):
             post = form.save(False)
             post.author = request.user
             form.save()
-            return redirect('posts:profile',username=post.author)
+            return redirect('posts:profile', username=post.author)
 
-        return render(request, 'posts/create_post.html', {'form':form})
-    
+        return render(request, 'posts/create_post.html', {'form': form})
+
     form = PostForm()
-    return render(request, 'posts/create_post.html', {'form':form})
+    return render(request, 'posts/create_post.html', {'form': form})
+
 
 def post_edit(request, post_id):
     '''страницу редактирования записи'''
@@ -95,6 +99,5 @@ def post_edit(request, post_id):
         form = PostForm(instance=post)
         return render(request, 'posts/create_post.html', {'form': form,
                                                           'is_edit': True})
-    
 
 
