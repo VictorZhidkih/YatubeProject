@@ -48,7 +48,6 @@ def profile(request, username):
     return render(request, 'posts/profile.html', context)
 
 
-@login_required
 def post_detail(request, post_id):
     post = get_object_or_404(Post, pk=post_id)
     posts_count = Post.objects.filter(author=post.author).count()
