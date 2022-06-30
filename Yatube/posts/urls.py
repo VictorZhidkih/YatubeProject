@@ -16,9 +16,8 @@ urlpatterns = [
         views.profile,
         name='profile'
     ),
-    # Просмотр записи
     path(
-        'post_detail/<post_id>/',
+        'posts/<int:post_id>/',
         views.post_detail,
         name='post_detail'
     ),
