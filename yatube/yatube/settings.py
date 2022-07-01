@@ -11,7 +11,6 @@ ALLOWED_HOSTS = []
 
 
 INSTALLED_APPS = [
-    'posts.apps.PostsConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -21,6 +20,7 @@ INSTALLED_APPS = [
     'users.apps.UsersConfig',
     'core.apps.CoreConfig',
     'about.apps.AboutConfig',
+    'posts'
 
 ]
 
@@ -101,6 +101,8 @@ USE_TZ = True
 STATIC_URL = '/static/'
 
 POST_PER_DATE = 10
+
+POST_PER_PAGE = 10
 
 LOGIN_URL = 'users:login'
 

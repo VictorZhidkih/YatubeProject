@@ -15,7 +15,7 @@
               <li class="list-group-item">
                 Группа: {{ group.title }}  
                 <a href="{%url 'posts:group_list' post.group.slug %}">
-                  все записи группы
+                  все записи группы {{group.slug}}
                 </a>
               </li>
             {% endif %} 

@@ -1,12 +1,14 @@
 from django.db import models
-
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
 
 
 class Post(models.Model):
-    text = models.TextField()
+    text = models.TextField(
+        help_text=('This is the help text'),
+        verbose_name = 'текст'
+    )
     pub_date = models.DateTimeField(auto_now_add=True)
     author = models.ForeignKey(
         User,
@@ -18,7 +20,8 @@ class Post(models.Model):
         on_delete=models.SET_NULL,
         blank=True,
         null=True,
-        related_name='posts'
+        related_name='posts',
+        verbose_name = 'группа'
     )
 
     class Meta:
