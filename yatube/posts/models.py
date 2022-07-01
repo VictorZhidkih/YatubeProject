@@ -7,7 +7,7 @@ User = get_user_model()
 class Post(models.Model):
     text = models.TextField(
         help_text=('This is the help text'),
-        verbose_name = 'текст'
+        verbose_name='текст'
     )
     pub_date = models.DateTimeField(auto_now_add=True)
     author = models.ForeignKey(
@@ -21,7 +21,7 @@ class Post(models.Model):
         blank=True,
         null=True,
         related_name='posts',
-        verbose_name = 'группа'
+        verbose_name='группа'
     )
 
     class Meta:

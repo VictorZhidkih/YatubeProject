@@ -1,5 +1,4 @@
 from .utils import paginator
-from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, render, redirect
 
@@ -34,7 +33,7 @@ def profile(request, username):
     context = {
         'page_obj': paginator(posts, request),
         'posts_count': posts_count,
-        'author': author, 
+        'author': author,
     }
     return render(request, 'posts/profile.html', context)
 
@@ -79,7 +78,7 @@ def post_edit(request, post_id):
                 post.save()
                 return redirect('posts:post_detail', post_id=post_id)
         form = PostForm(instance=post)
-        context ={
+        context = {
             'form': form,
             'is_edit': True
         }
