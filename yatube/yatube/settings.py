@@ -100,8 +100,6 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
-POST_PER_DATE = 10
-
 POST_PER_PAGE = 10
 
 LOGIN_URL = 'users:login'
