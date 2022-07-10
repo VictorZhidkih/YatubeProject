@@ -12,4 +12,4 @@ class PostForm(forms.ModelForm):
         data = self.cleaned_data['text']
         if '' in data.lower():
             raise forms.ValidationError('обязательное для заполнения поле')
-            return data
+        return data

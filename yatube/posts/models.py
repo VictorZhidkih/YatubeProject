@@ -9,11 +9,15 @@ class Post(models.Model):
         help_text=('This is the help text'),
         verbose_name='текст'
     )
-    pub_date = models.DateTimeField(auto_now_add=True)
+    pub_date = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Дата публикации'
+    )
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name='posts'
+        related_name='posts',
+        verbose_name='автор'
     )
     group = models.ForeignKey(
         'Group',
@@ -21,7 +25,8 @@ class Post(models.Model):
         blank=True,
         null=True,
         related_name='posts',
-        verbose_name='группа'
+        verbose_name='группа',
+        help_text='Группа, к которой будет относиться пост'
     )
 
     class Meta:
