@@ -28,6 +28,12 @@ class Post(models.Model):
         verbose_name='группа',
         help_text='Группа, к которой будет относиться пост'
     )
+    image = models.ImageField(
+        'Картинка',
+        upload_to='posts/',
+        blank=True,
+        help_text='Загрузите фото'
+    )
 
     class Meta:
         verbose_name = 'post'
@@ -35,7 +41,7 @@ class Post(models.Model):
         ordering = ('-pub_date',)
 
     def __str__(self):
-        return self.text
+        return self.text[:15]
 
 
 class Group(models.Model):
@@ -45,3 +51,33 @@ class Group(models.Model):
 
     def __str__(self):
         return self.title
+
+class Comment(models.Model):
+    post = models.ForeignKey(
+        Post,
+        on_delete=models.CASCADE,
+        related_name='comments',
+        help_text='Оставьте комментарий к этому посту',
+        verbose_name='комментарий',
+    )
+    author = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='comments',
+        verbose_name='Автор'
+    )
+    text = models.TextField(
+        verbose_name='текст'
+    )
+    created=models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Дата публикации'
+    )
+    
+    class Meta:
+        ordering = ['created']
+        verbose_name = 'comment'
+        verbose_name_plural = 'comments'
+
+    def __str__(self):
+        return self.text

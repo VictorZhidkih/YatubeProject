@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load thumbnail %}
 {% block title %}
   Профайл пользователя 
   {% if author.get_full_name %}
@@ -18,6 +19,9 @@
         <h3>Всего постов: {{posts_count}} </h3>
        {% for post in page_obj %} 
         <article>
+          {% thumbnail post.image "960x339" crop="center" upscale=True as im %}
+          <img class="card-img my-2" src="{{ im.url }}">
+          {% endthumbnail %}
           <ul>
             <li>
               Автор:

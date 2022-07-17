@@ -18,13 +18,14 @@ class PostModelTest(TestCase):
         )
         cls.post = Post.objects.create(
             author=cls.user,
-            text='Тестовая пост',
+            text='Тестовый пост, более пятнадцати символов',
         )
 
     def test_models_have_correct_object_names(self):
         """Проверяем, что у моделей корректно работает __str__."""
         models_str = {PostModelTest.post: PostModelTest.post.text[:15],
                       PostModelTest.group: PostModelTest.group.title}
+
         for model, expected_values in models_str.items():
             with self.subTest(model=model):
                 self.assertEqual(model.__str__(), expected_values,
@@ -40,6 +41,7 @@ class PostModelTest(TestCase):
             'author': 'автор',
             'group': 'группа'
         }
+
         for field, expected_name in field_verbose.items():
             with self.subTest(field=field):
                 self.assertEqual(
