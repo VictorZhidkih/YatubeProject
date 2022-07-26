@@ -1,5 +1,6 @@
 from http import HTTPStatus
 
+from django.core.cache import cache
 from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
 
@@ -13,6 +14,7 @@ class PostsUrlTests(TestCase):
 
     @classmethod
     def setUpClass(cls):
+        cache.clear()
         super().setUpClass()
         cls.endpoint_posts_index = '/'
         cls.template_posts_index = 'posts/index.html'
@@ -40,6 +42,7 @@ class PostsUrlTests(TestCase):
         )
 
     def setUp(self):
+        cache.clear()
         self.guest_client = Client()
         self.not_authorized_user = User.objects.create_user(username='NoName')
         self.user_2 = User.objects.create_user(username='HasNoName')
@@ -47,13 +50,13 @@ class PostsUrlTests(TestCase):
         self.authorized_client.force_login(self.user_2)
         self.post_author = Client()
         self.post_author.force_login(self.user)
-        
+
     def test_unexisting_page(self):
         """Страница unexisting_page вернет ошибку 404"""
         response = self.guest_client.get('/unexisting_page/')
 
         self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
-    
+
     def test_post_edit_page_available_for_author_only(self):
         """Страница /posts/<post_id>/edit доступна только автору"""
         response = self.post_author.get(f'/posts/{self.post.pk}/edit/')
@@ -75,7 +78,7 @@ class PostsUrlTests(TestCase):
 
         for address in url_names:
             with self.subTest(address=address):
-                response = self.guest_client.get(address)
+                response = self.post_author.get(address)
 
                 self.assertEqual(response.status_code, HTTPStatus.OK)
 

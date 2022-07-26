@@ -2,6 +2,7 @@ from http import HTTPStatus
 
 from django import forms
 from django.conf import settings
+from django.core.cache import cache
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
@@ -56,7 +57,6 @@ class PostViewsTest(TestCase):
             text='Тестовый пост',
             group=cls.group,
             image=uploaded,
-            
         )
         cls.new_group = Group.objects.create(
             title='Новая группа',
@@ -65,21 +65,37 @@ class PostViewsTest(TestCase):
         )
 
     def setUp(self):
+        cache.clear()
         self.guest_client = Client()
         self.authorized_client = Client()
         self.post_author = Client()
         self.user_2 = User.objects.create_user(username='No')
         self.authorized_client.force_login(self.user_2)
         self.post_author.force_login(self.user)
-        
-    def test_comment_only_authorized_user(self):
-        """Оставить комент может только авторизованный user"""
-        response = self.guest_client.get(
-            reverse('posts:add_comment',
-            kwargs={'post_id': self.post.id}
-            )
+
+    def test_cache(self):
+        """Проверяем работу кэша"""
+        post = Post.objects.create(
+            author=self.user,
+            text='Тестовый пост',
+            group=self.group,
+            image='uploaded',
         )
-        self.assertEquals(response.status_code, HTTPStatus.UNAUTHORIZED)
+        content_before_delete = self.authorized_client.get(
+            reverse(self.endpoint_posts_index)).content
+        post.delete()
+        content_after_delete = self.authorized_client.get(
+            reverse(self.endpoint_posts_index)).content
+        cache.clear()
+        content_after_cache_clear = self.authorized_client.get(
+            reverse(self.endpoint_posts_index)).content
+
+        self.assertEqual(
+            content_before_delete, content_after_delete
+        )
+        self.assertNotEqual(
+            content_before_delete, content_after_cache_clear
+        )
 
     def test_pages_uses_correct_template(self):
         """URL-адрес использует соответствующий шаблон."""
@@ -114,7 +130,7 @@ class PostViewsTest(TestCase):
 
         self.assertEqual(
             response.context['page_obj'].object_list[0], self.post)
-        
+
         self.assertEqual(
             response.context['page_obj'].object_list[0].image, self.post.image)
 
@@ -141,7 +157,7 @@ class PostViewsTest(TestCase):
                 self.endpoint_posts_profile, kwargs={'username': self.user}
             )
         )
-        
+
         test_image = response.context['page_obj'].object_list[0].image
         test_author = response.context.get('author')
 
@@ -193,28 +209,7 @@ class PostViewsTest(TestCase):
                 form_field = response.context.get('form').fields.get(value)
 
                 self.assertIsInstance(form_field, expected)
-    def test_comment_on_post(self):
-        """После отправки комментария он появляется на странице поста"""
-        # делаешь пост коммента
-        comment = Comment.objects.create(
-            text = 'Пробный текст',
-            post_id = self.post.id,
-            author = self.user_2,
-        )
-        # открваешь вьюху поста
-        response = self.authorized_client.get(
-            reverse(
-                self.endpoint_posts_add_comment,
-                kwargs ={'post_id': self.post.id}
-            )
-        )
-        # проверка что в контектсе ресопса есть есть такой комментарий
-        print(response.context)
-        print("aaaaaaaaaaaaa")
 
-        comments = response.context.get('comments')
-        self.assertIn(comments.values_list('id',flat=True), comment)
-        
     def test_check_post_on_create(self):
         """Проверка, что пост правильно добавляется на страницы."""
         pages = (
@@ -283,6 +278,9 @@ class PaginatorViewsTest(TestCase):
 
     def setUp(self):
         self.guest_client = Client()
+        self.user = User.objects.create_user(username='test_user')
+        self.authorized_clieent = Client()
+        self.authorized_clieent.force_login(self.user)
 
     def test_first_page_contains_ten_records(self):
         """Первая страница index содержит десять записей."""
@@ -295,7 +293,7 @@ class PaginatorViewsTest(TestCase):
         )
 
         for address in pages_with_paginator:
-            response = self.guest_client.get(address)
+            response = self.authorized_clieent.get(address)
 
             self.assertEqual(
                 len(response.context['page_obj']), settings.POST_PER_PAGE)
@@ -311,8 +309,122 @@ class PaginatorViewsTest(TestCase):
         )
 
         for address in pages_with_paginator:
-            response = self.guest_client.get(address + '?page=2')
+            response = self.authorized_clieent.get(address + '?page=2')
 
             self.assertEqual(
                 len(response.context['page_obj']), 3
             )
+
+
+class FollowCommentsTeste(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.endpoint_posts_add_comment = 'posts:add_comment'
+        cls.endpoint_posts_profile_follow = 'posts:profile_follow'
+        cls.endpoint_posts_profile_unfollow = 'posts:profile_unfollow'
+        cls.endpoint_posts_post_detail = 'posts:post_detail'
+        cls.endpoint_posts_follow = 'posts:follow_index'
+
+        small_gif = (
+            b'\x47\x49\x46\x38\x39\x61\x02\x00'
+            b'\x01\x00\x80\x00\x00\x00\x00\x00'
+            b'\xFF\xFF\xFF\x21\xF9\x04\x00\x00'
+            b'\x00\x00\x00\x2C\x00\x00\x00\x00'
+            b'\x02\x00\x01\x00\x00\x02\x02\x0C'
+            b'\x0A\x00\x3B'
+        )
+        uploaded = SimpleUploadedFile(
+            name='small.gif',
+            content=small_gif,
+            content_type='image/gif'
+        )
+
+        cls.user = User.objects.create_user(username='auth')
+        cls.group = Group.objects.create(
+            title='Тестовая группа',
+            slug='test-slug',
+            description='Тестовое описание',
+        )
+        cls.post = Post.objects.create(
+            author=cls.user,
+            text='Тестовый пост',
+            group=cls.group,
+            image=uploaded,
+        )
+
+    def setUp(self):
+        cache.clear()
+        self.guest_client = Client()
+        self.authorized_client = Client()
+        self.post_author = Client()
+        self.user_2 = User.objects.create_user(username='No')
+        self.authorized_client.force_login(self.user_2)
+        self.post_author.force_login(self.user)
+
+    def test_comment_on_post(self):
+        """После отправки комментария он появляется на странице поста"""
+        # делаешь пост коммента
+        comment = Comment.objects.create(
+            text='Пробный текст',
+            post_id=self.post.id,
+            author=self.user_2,
+        )
+        # открваешь вьюху поста
+        response = self.authorized_client.get(
+            reverse(
+                self.endpoint_posts_post_detail,
+                kwargs={'post_id': self.post.id}
+            )
+        )
+
+        comments = response.context.get('comments')
+        self.assertIn(comment.pk, comments.values_list('id', flat=True))
+
+    def test_comment_only_authorized_user(self):
+        """Оставить комент может только авторизованный user"""
+        response = self.guest_client.post(
+            reverse('posts:add_comment',
+                    kwargs={'post_id': self.post.id})
+        )
+        self.assertEqual(response.status_code, HTTPStatus.FOUND)
+
+    def test_follow_only_authorized_user(self):
+        """Подписаться может только авторизованный пользователь"""
+        response = self.authorized_client.get(
+            reverse(self.endpoint_posts_profile_follow,
+                    kwargs={'username': self.user})
+        )
+
+        self.assertEqual(response.status_code, HTTPStatus.FOUND)
+
+    def test_delete_follower(self):
+        """Удалять автора из подписок может авторизованный пользователь"""
+        response_before = self.authorized_client.get(
+            reverse(self.endpoint_posts_profile_follow,
+                    kwargs={'username': self.user})).content
+        response_after = self.authorized_client.get(
+            reverse(self.endpoint_posts_profile_unfollow,
+                    kwargs={'username': self.user})).content
+
+        self.assertEqual(response_before, response_after)
+
+    def test__new_post_appears_only_to_his_subscribers(self):
+        """Новая запись появляется в ленте только у его подписчиков"""
+        # создаем запись автора
+        self.post = Post.objects.create(
+            author=self.user,
+            text='Пост для подписчика',
+        )
+        # нужно подписаться на автора поста
+        response_before = self.authorized_client.get(
+            reverse(self.endpoint_posts_profile_follow,
+                    kwargs={'username': self.user}))
+        # проверить что в нашем шаблоне follow отображается данный пост
+        response = self.authorized_client.get(
+            reverse(self.endpoint_posts_follow)
+        )
+        # взяли первый объект из списка
+        response_first_objects = response.context['page_obj'].object_list[0]
+
+        self.assertEqual(self.post, response_first_objects)

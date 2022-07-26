@@ -14,7 +14,8 @@ class PostForm(forms.ModelForm):
             raise forms.ValidationError('обязательное для заполнения поле')
         return data
 
+
 class CommentForm(forms.ModelForm):
     class Meta:
         model = Comment
-        fields = ('text',)  
+        fields = ('text',)

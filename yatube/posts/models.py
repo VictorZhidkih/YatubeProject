@@ -11,7 +11,8 @@ class Post(models.Model):
     )
     pub_date = models.DateTimeField(
         auto_now_add=True,
-        verbose_name='Дата публикации'
+        verbose_name='Дата публикации',
+        db_index=True
     )
     author = models.ForeignKey(
         User,
@@ -52,6 +53,7 @@ class Group(models.Model):
     def __str__(self):
         return self.title
 
+
 class Comment(models.Model):
     post = models.ForeignKey(
         Post,
@@ -67,13 +69,14 @@ class Comment(models.Model):
         verbose_name='Автор'
     )
     text = models.TextField(
-        verbose_name='текст'
+        verbose_name='текст',
+        help_text='Текст нового комментария'
     )
-    created=models.DateTimeField(
+    created = models.DateTimeField(
         auto_now_add=True,
         verbose_name='Дата публикации'
     )
-    
+
     class Meta:
         ordering = ['created']
         verbose_name = 'comment'
@@ -81,3 +84,17 @@ class Comment(models.Model):
 
     def __str__(self):
         return self.text
+
+
+class Follow(models.Model):
+    user = models.ForeignKey(
+        User,
+        related_name='follower',
+        on_delete=models.CASCADE,
+    )
+    author = models.ForeignKey(
+        User,
+        related_name='following',
+        on_delete=models.CASCADE,
+        verbose_name='автор'
+    )
