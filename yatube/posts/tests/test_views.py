@@ -417,7 +417,7 @@ class FollowCommentsTeste(TestCase):
             text='Пост для подписчика',
         )
         # нужно подписаться на автора поста
-        response_before = self.authorized_client.get(
+        self.authorized_client.get(
             reverse(self.endpoint_posts_profile_follow,
                     kwargs={'username': self.user}))
         # проверить что в нашем шаблоне follow отображается данный пост
