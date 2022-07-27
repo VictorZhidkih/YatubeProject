@@ -38,22 +38,22 @@ class PostFormsTest(TestCase):
             group=cls.group,
         )
         cls.form = PostForm()
-
+    @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
+        shutil.rmtree(TEMP_MEDIA_ROOT, ignore_errors=True)
+        
     def setUp(self):
-        cache.clear()
         self.user = User.objects.create_user(username='test_user')
         self.authorized_client = Client()
         self.authorized_client.force_login(self.user)
         self.author_post = Client()
         self.author_post.force_login(self.author)
-
-    @classmethod
-    def tearDownClass(cls):
-        super().tearDownClass()
-        shutil.rmtree(TEMP_MEDIA_ROOT, ignore_errors=True)
+        cache.clear()
 
     def test_send_valid_form_post_create(self):
         """Валидная форма создает новый пост авторизованным пользователем."""
+        cache.clear()
         posts_count = Post.objects.count()
         small_gif = (
             b'\x47\x49\x46\x38\x39\x61\x02\x00'

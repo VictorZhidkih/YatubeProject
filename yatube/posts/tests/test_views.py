@@ -8,7 +8,7 @@ from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
 from django.urls import reverse
 
-from posts.models import Group, Post, Comment
+from posts.models import Group, Post, Comment, Follow
 
 User = get_user_model()
 
@@ -65,13 +65,13 @@ class PostViewsTest(TestCase):
         )
 
     def setUp(self):
-        cache.clear()
         self.guest_client = Client()
         self.authorized_client = Client()
         self.post_author = Client()
         self.user_2 = User.objects.create_user(username='No')
         self.authorized_client.force_login(self.user_2)
         self.post_author.force_login(self.user)
+        cache.clear()
 
     def test_cache(self):
         """Проверяем работу кэша"""
@@ -96,6 +96,15 @@ class PostViewsTest(TestCase):
         self.assertNotEqual(
             content_before_delete, content_after_cache_clear
         )
+
+    def setUp(self):
+        cache.clear()
+        self.guest_client = Client()
+        self.authorized_client = Client()
+        self.post_author = Client()
+        self.user_2 = User.objects.create_user(username='No')
+        self.authorized_client.force_login(self.user_2)
+        self.post_author.force_login(self.user)
 
     def test_pages_uses_correct_template(self):
         """URL-адрес использует соответствующий шаблон."""
@@ -279,8 +288,8 @@ class PaginatorViewsTest(TestCase):
     def setUp(self):
         self.guest_client = Client()
         self.user = User.objects.create_user(username='test_user')
-        self.authorized_clieent = Client()
-        self.authorized_clieent.force_login(self.user)
+        self.authorized_client = Client()
+        self.authorized_client.force_login(self.user)
 
     def test_first_page_contains_ten_records(self):
         """Первая страница index содержит десять записей."""
@@ -293,7 +302,7 @@ class PaginatorViewsTest(TestCase):
         )
 
         for address in pages_with_paginator:
-            response = self.authorized_clieent.get(address)
+            response = self.authorized_client.get(address)
 
             self.assertEqual(
                 len(response.context['page_obj']), settings.POST_PER_PAGE)
@@ -309,7 +318,7 @@ class PaginatorViewsTest(TestCase):
         )
 
         for address in pages_with_paginator:
-            response = self.authorized_clieent.get(address + '?page=2')
+            response = self.authorized_client.get(address + '?page=2')
 
             self.assertEqual(
                 len(response.context['page_obj']), 3
@@ -371,7 +380,7 @@ class FollowCommentsTeste(TestCase):
             author=self.user_2,
         )
         # открваешь вьюху поста
-        response = self.authorized_client.get(
+        response = self.post_author.get(
             reverse(
                 self.endpoint_posts_post_detail,
                 kwargs={'post_id': self.post.id}
@@ -383,48 +392,50 @@ class FollowCommentsTeste(TestCase):
 
     def test_comment_only_authorized_user(self):
         """Оставить комент может только авторизованный user"""
-        response = self.guest_client.post(
-            reverse('posts:add_comment',
+        response = self.post_author.post(
+            reverse(self.endpoint_posts_add_comment,
                     kwargs={'post_id': self.post.id})
         )
         self.assertEqual(response.status_code, HTTPStatus.FOUND)
 
     def test_follow_only_authorized_user(self):
         """Подписаться может только авторизованный пользователь"""
-        response = self.authorized_client.get(
+        self.authorized_client.get(
             reverse(self.endpoint_posts_profile_follow,
-                    kwargs={'username': self.user})
+                    kwargs={'username': self.user}),
+            follow=True
         )
-
-        self.assertEqual(response.status_code, HTTPStatus.FOUND)
+        self.assertEqual(Follow.objects.count(), 1)
 
     def test_delete_follower(self):
         """Удалять автора из подписок может авторизованный пользователь"""
-        response_before = self.authorized_client.get(
-            reverse(self.endpoint_posts_profile_follow,
-                    kwargs={'username': self.user})).content
-        response_after = self.authorized_client.get(
+        followers_count = Follow.objects.count()
+        # создаем подписчика
+        Follow.objects.create(user=self.user_2,
+                              author=self.user)
+        # этот подписчик отписывается от автора
+        response = self.authorized_client.get(
             reverse(self.endpoint_posts_profile_unfollow,
-                    kwargs={'username': self.user})).content
+                    kwargs={'username': self.user}),
+            follow=True
+        )
 
-        self.assertEqual(response_before, response_after)
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+        self.assertEqual(Follow.objects.count(), followers_count)
 
     def test__new_post_appears_only_to_his_subscribers(self):
         """Новая запись появляется в ленте только у его подписчиков"""
         # создаем запись автора
-        self.post = Post.objects.create(
+        post = Post.objects.create(
             author=self.user,
             text='Пост для подписчика',
         )
-        # нужно подписаться на автора поста
-        self.authorized_client.get(
-            reverse(self.endpoint_posts_profile_follow,
-                    kwargs={'username': self.user}))
-        # проверить что в нашем шаблоне follow отображается данный пост
+        # создаем подписчика на автора
+        Follow.objects.create(user=self.user_2,
+                              author=self.user)
         response = self.authorized_client.get(
             reverse(self.endpoint_posts_follow)
         )
-        # взяли первый объект из списка
-        response_first_objects = response.context['page_obj'].object_list[0]
 
-        self.assertEqual(self.post, response_first_objects)
+        response_first_objects = response.context['page_obj'].object_list[0]
+        self.assertEqual(post, response_first_objects)
