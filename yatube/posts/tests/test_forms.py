@@ -11,15 +11,11 @@ from django.urls import reverse
 
 from ..models import Group, Post
 
-# Создаем временную папку для медиа-файлов;
-# на момент теста медиа папка будет переопределена
 TEMP_MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
 
 User = get_user_model()
 
 
-# Для сохранения media-файлов в тестах будет использоваться
-# временная папка TEMP_MEDIA_ROOT, а потом мы ее удалим
 @override_settings(MEDIA_ROOT=TEMP_MEDIA_ROOT)
 class PostFormsTest(TestCase):
 

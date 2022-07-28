@@ -1,3 +1,6 @@
+import shutil
+import tempfile
+
 from http import HTTPStatus
 
 from django import forms
@@ -5,14 +8,17 @@ from django.conf import settings
 from django.core.cache import cache
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.contrib.auth import get_user_model
-from django.test import Client, TestCase
+from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
 from posts.models import Group, Post, Comment, Follow
 
+TEMP_MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
+
 User = get_user_model()
 
 
+@override_settings(MEDIA_ROOT=TEMP_MEDIA_ROOT)
 class PostViewsTest(TestCase):
     '''Класс для тестирования View'''
     @classmethod
@@ -63,6 +69,11 @@ class PostViewsTest(TestCase):
             slug='test-slug_new',
             description='Новое описание',
         )
+
+    @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
+        shutil.rmtree(TEMP_MEDIA_ROOT, ignore_errors=True)
 
     def setUp(self):
         self.guest_client = Client()
@@ -259,6 +270,7 @@ class PostViewsTest(TestCase):
         self.assertNotIn(self.post, response.context['page_obj'])
 
 
+@override_settings(MEDIA_ROOT=TEMP_MEDIA_ROOT)
 class PaginatorViewsTest(TestCase):
     @classmethod
     def setUpClass(cls):
@@ -284,6 +296,11 @@ class PaginatorViewsTest(TestCase):
                 author=cls.author,
                 group=cls.group,
             )
+
+    @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
+        shutil.rmtree(TEMP_MEDIA_ROOT, ignore_errors=True)
 
     def setUp(self):
         self.guest_client = Client()
@@ -325,6 +342,7 @@ class PaginatorViewsTest(TestCase):
             )
 
 
+@override_settings(MEDIA_ROOT=TEMP_MEDIA_ROOT)
 class FollowCommentsTeste(TestCase):
     @classmethod
     def setUpClass(cls):
@@ -361,6 +379,11 @@ class FollowCommentsTeste(TestCase):
             group=cls.group,
             image=uploaded,
         )
+
+    @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
+        shutil.rmtree(TEMP_MEDIA_ROOT, ignore_errors=True)
 
     def setUp(self):
         cache.clear()
@@ -410,10 +433,9 @@ class FollowCommentsTeste(TestCase):
     def test_delete_follower(self):
         """Удалять автора из подписок может авторизованный пользователь"""
         followers_count = Follow.objects.count()
-        # создаем подписчика
         Follow.objects.create(user=self.user_2,
                               author=self.user)
-        # этот подписчик отписывается от автора
+
         response = self.authorized_client.get(
             reverse(self.endpoint_posts_profile_unfollow,
                     kwargs={'username': self.user}),
@@ -425,14 +447,13 @@ class FollowCommentsTeste(TestCase):
 
     def test__new_post_appears_only_to_his_subscribers(self):
         """Новая запись появляется в ленте только у его подписчиков"""
-        # создаем запись автора
         post = Post.objects.create(
             author=self.user,
             text='Пост для подписчика',
         )
-        # создаем подписчика на автора
         Follow.objects.create(user=self.user_2,
                               author=self.user)
+
         response = self.authorized_client.get(
             reverse(self.endpoint_posts_follow)
         )
