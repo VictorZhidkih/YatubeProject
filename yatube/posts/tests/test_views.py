@@ -1,17 +1,16 @@
 import shutil
 import tempfile
-
 from http import HTTPStatus
 
 from django import forms
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.contrib.auth import get_user_model
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
-from posts.models import Group, Post, Comment, Follow
+from posts.models import Comment, Follow, Group, Post
 
 TEMP_MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
 
@@ -90,7 +89,7 @@ class PostViewsTest(TestCase):
             author=self.user,
             text='Тестовый пост',
             group=self.group,
-            image='uploaded',
+            image='posts/small.gif',
         )
         content_before_delete = self.authorized_client.get(
             reverse(self.endpoint_posts_index)).content

@@ -2,8 +2,8 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.cache import cache_page
 
-from .forms import PostForm, CommentForm
-from .models import Group, Post, User, Comment, Follow
+from .forms import CommentForm, PostForm
+from .models import Comment, Follow, Group, Post, User
 from .utils import paginator
 
 
@@ -46,6 +46,7 @@ def post_detail(request, post_id):
     posts_count = post.author.posts.count()
     comments = Comment.objects.select_related(
         'author',
+        'post'
     )
     form = CommentForm()
     context = {
@@ -101,7 +102,6 @@ def add_comment(request, post_id):
     post = get_object_or_404(Post, pk=post_id)
     form = CommentForm(request.POST or None)
     if form.is_valid():
-        print(add_comment)
         comment = form.save(commit=False)
         comment.author = request.user
         comment.post = post
@@ -127,7 +127,6 @@ def profile_follow(request, username):
     follower = Follow.objects.filter(user=currently_user, author=author)
     if currently_user != author and not follower.exists():
         Follow.objects.create(user=currently_user, author=author)
-        return redirect('posts:profile', username=username)
     return redirect('posts:profile', username=username)
 
 
@@ -138,5 +137,4 @@ def profile_unfollow(request, username):
     follower = Follow.objects.filter(user=currently_user, author=author)
     if follower.exists():
         follower.delete()
-        return redirect('posts:profile', username=username)
     return redirect('posts:profile', username=username)
