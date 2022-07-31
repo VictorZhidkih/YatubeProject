@@ -103,8 +103,8 @@ class Follow(models.Model):
     class Meta:
         verbose_name = 'follow'
         verbose_name_plural = 'followers'
-        constraints = [
+        constraints = (
             UniqueConstraint(
-                fields=['user', 'author'], name='unique_followers'
+                fields=('user', 'author'), name='unique_followers'
             )
-        ]
+        )

@@ -71,8 +71,8 @@ class PostViewsTest(TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        super().tearDownClass()
         shutil.rmtree(TEMP_MEDIA_ROOT, ignore_errors=True)
+        super().tearDownClass()
 
     def setUp(self):
         self.guest_client = Client()
@@ -106,15 +106,6 @@ class PostViewsTest(TestCase):
         self.assertNotEqual(
             content_before_delete, content_after_cache_clear
         )
-
-    def setUp(self):
-        cache.clear()
-        self.guest_client = Client()
-        self.authorized_client = Client()
-        self.post_author = Client()
-        self.user_2 = User.objects.create_user(username='No')
-        self.authorized_client.force_login(self.user_2)
-        self.post_author.force_login(self.user)
 
     def test_pages_uses_correct_template(self):
         """URL-адрес использует соответствующий шаблон."""
@@ -273,6 +264,7 @@ class PostViewsTest(TestCase):
 class PaginatorViewsTest(TestCase):
     @classmethod
     def setUpClass(cls):
+        super().setUpClass()
         cls.endpoint_posts_index = 'posts:index'
         cls.endpoint_posts_group_list = 'posts:group_list'
         cls.endpoint_posts_profile = 'posts:profile'
@@ -281,7 +273,6 @@ class PaginatorViewsTest(TestCase):
         cls.CONST_POST_PER_SECOND_PAGE = 3
         cls.CONST_all_posts = settings.POST_PER_PAGE + (
             cls.CONST_POST_PER_SECOND_PAGE)
-        super().setUpClass()
         cls.author = User.objects.create_user(username='Vitya')
         cls.group = Group.objects.create(
             title='Тестовый заголовок',
@@ -381,8 +372,8 @@ class FollowCommentsTeste(TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        super().tearDownClass()
         shutil.rmtree(TEMP_MEDIA_ROOT, ignore_errors=True)
+        super().tearDownClass()
 
     def setUp(self):
         cache.clear()
@@ -395,21 +386,19 @@ class FollowCommentsTeste(TestCase):
 
     def test_comment_on_post(self):
         """После отправки комментария он появляется на странице поста"""
-        # делаешь пост коммента
         comment = Comment.objects.create(
             text='Пробный текст',
             post_id=self.post.id,
             author=self.user_2,
         )
-        # открваешь вьюху поста
         response = self.post_author.get(
             reverse(
                 self.endpoint_posts_post_detail,
                 kwargs={'post_id': self.post.id}
             )
         )
-
         comments = response.context.get('comments')
+
         self.assertIn(comment.pk, comments.values_list('id', flat=True))
 
     def test_comment_only_authorized_user(self):
@@ -459,3 +448,17 @@ class FollowCommentsTeste(TestCase):
 
         response_first_objects = response.context['page_obj'].object_list[0]
         self.assertEqual(post, response_first_objects)
+
+    def test_new_post_dont_appear__to_non_subscribers(self):
+        """Новая запись не появляется у тех, кто не подписан на автора"""
+        post = Post.objects.create(
+            author=self.user,
+            text='Пост для подписчика',
+        )
+
+        response = self.authorized_client.get(
+            reverse(self.endpoint_posts_follow)
+        )
+
+        response_first_objects = response.context['page_obj']
+        self.assertNotIn(post, response_first_objects)
