@@ -289,8 +289,8 @@ class PaginatorViewsTest(TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        super().tearDownClass()
         shutil.rmtree(TEMP_MEDIA_ROOT, ignore_errors=True)
+        super().tearDownClass()
 
     def setUp(self):
         self.guest_client = Client()
@@ -407,6 +407,7 @@ class FollowCommentsTeste(TestCase):
             reverse(self.endpoint_posts_add_comment,
                     kwargs={'post_id': self.post.id})
         )
+        
         self.assertEqual(response.status_code, HTTPStatus.FOUND)
 
     def test_follow_only_authorized_user(self):
@@ -415,6 +416,13 @@ class FollowCommentsTeste(TestCase):
             reverse(self.endpoint_posts_profile_follow,
                     kwargs={'username': self.user}),
             follow=True
+        )
+        
+        self.assertTrue(
+            Follow.objects.filter(
+                user=self.user_2,
+                author=self.user  
+            ).exists()
         )
         self.assertEqual(Follow.objects.count(), 1)
 
